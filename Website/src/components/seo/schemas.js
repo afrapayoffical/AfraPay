@@ -19,7 +19,7 @@ export const ORGANIZATION = {
   url: SITE_BASE_URL,
   logo: {
     "@type": "ImageObject",
-    url: `${SITE_BASE_URL}/mainlogo.png`,
+    url: `${SITE_BASE_URL}/logo.png`,
     width: 192,
     height: 192,
   },

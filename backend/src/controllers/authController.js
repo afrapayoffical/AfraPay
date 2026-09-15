@@ -1409,7 +1409,30 @@ class AuthController {
     return session;
   }
 
-  // Add more helper methods as needed...
+  /**
+   * PIN Hashing using scrypt (standard nodejs built-in)
+   */
+  async hashPin(pin) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(pin, salt, 64).toString('hex');
+    return `${salt}:${hash}`;
+  }
+
+  async verifyPin(userId, pin) {
+    const user = await users.get(userId);
+    const stored = user.prefs?.pinHash;
+    if (!stored) return false;
+
+    const [salt, hash] = stored.split(':');
+    const newHash = crypto.scryptSync(pin, salt, 64).toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(newHash, 'hex'));
+  }
+
+  async setPin(userId, pin) {
+    const hash = await this.hashPin(pin);
+    await mergePrefs(userId, { pinHash: hash });
+  }
+
   isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }

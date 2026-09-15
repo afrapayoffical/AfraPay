@@ -26,6 +26,7 @@ const analyticsRoutes = require("./analytics");
 const cardRoutes = require("./cards");
 const merchantRoutes = require("./merchants");
 const subscriptionRoutes = require("./subscriptions");
+const walletRoutes = require("./wallets");
 
 // Route configuration with middleware
 router.use("/auth", authRoutes);
@@ -58,9 +59,10 @@ router.use("/analytics", analyticsRoutes);
 router.use("/cards", cardRoutes);
 router.use("/merchants", merchantRoutes);
 router.use("/subscriptions", subscriptionRoutes);
+router.use("/wallets", walletRoutes);
 
 // API v1 status
-router.get("/", (req, res) => {
+router.get("/", (_req, res) => {
   res.success(
     {
       version: "v1",

@@ -220,53 +220,7 @@ const Login = () => {
     toast.error("Google sign-in was cancelled or failed.");
   };
 
-  // Facebook Sign-In — FacebookLogin calls this with an accessToken + userID.
-  // We send both to the backend which verifies via Facebook's debug_token API
-  // to confirm the token is authentic and issued to our app.
-  /* const handleFacebookSuccess = async (response) => {
-    const accessToken =
-      response.accessToken || response.authResponse?.accessToken;
-    const userID = response.userID || response.authResponse?.userID;
-    if (!accessToken || !userID) {
-      toast.error("Facebook sign-in failed. Please try again.");
-      return;
-    }
-    try {
-      const res = await authAPI.facebookLogin(accessToken, userID);
-      if (res.success) {
-        if (res.data?.mfaRequired) {
-          setMfaState((s) => ({
-            ...s,
-            required: true,
-            token: null,
-            challengeType: "totp",
-            oauthType: "facebook",
-            oauthCredential: { accessToken, userID },
-          }));
-          toast.success("Please enter the code from your authenticator app.");
-          return;
-        }
-        if (res.data?.user) setAuthFromBackend(res.data.user);
-        toast.success(
-          res.data?.user?.isNewUser
-            ? "Account created! Welcome to AfraPay."
-            : "Login successful!",
-        );
-        // Navigation handled by isAuthenticated useEffect
-      }
-    } catch (error) {
-      console.error("Facebook login error:", error);
-      const message =
-        error.response?.data?.error?.message ||
-        "Facebook sign-in failed. Please try again.";
-      toast.error(message);
-    }
-  };
 
-  const handleFacebookError = (error) => {
-    console.error("Facebook login error:", error);
-    toast.error("Facebook sign-in was cancelled or failed.");
-  }; */
 
   const handleMfaSubmit = async (e) => {
     e.preventDefault();

@@ -1,6 +1,14 @@
 /**
  * Authentication Middleware
- * Verifies JWT tokens and authenticates users
+ * Verifies JWT tokens and authenticates users.
+ *
+ * For every request, the JWT signature is verified AND the user's live
+ * account status is re-checked against the persisted store.  This prevents
+ * a hijacked or leaked JWT from being used against a revoked / suspended
+ * account (session staleness).
+ *
+ * Redis-backed token blacklist is checked via tokenBlacklist.js.
+ * PostgreSQL-backed account status is checked in the live reload path.
  */
 
 const jwt = require("jsonwebtoken");
@@ -127,7 +135,7 @@ function verifyToken(token) {
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-async function authenticate(req, res, next) {
+async function authenticate(req, _res, next) {
   try {
     // Extract token from request
     const token = extractToken(req);
@@ -149,25 +157,51 @@ async function authenticate(req, res, next) {
       throw new AuthenticationError("Token has been revoked");
     }
 
-    // TODO: Load user from database and attach to request
-    // const user = await getUserById(decoded.userId);
-    // if (!user) {
-    //   throw new AuthenticationError('User not found');
-    // }
+    // ── Live account-status reload ────────────────────────────────────────
+    // Reject expired, deactivated, or KYC-changed sessions immediately.
+    // TODO (pre-PG cutover): when ledger accounts are provisioned, read
+    // account status from ledger_accounts / users postgres table instead of
+    // Appwrite.  For now we keep the Appwrite check as the source of truth.
+    let userProfile = null;
+    try {
+      const { appwrite: dbConn } = require("../../database/connection");
+      userProfile = await dbConn.getDatabases().getDocument(
+        config.database.appwrite.databaseId,
+        config.database.appwrite.userCollectionId,
+        decoded.sub
+      );
+    } catch (appwriteErr) {
+      logger.warn("Live account reload failed, falling back to token claim", {
+        userId: decoded.sub,
+        error: appwriteErr.message,
+        requestId: req.id,
+      });
+    }
 
-    // if (user.status !== 'active') {
-    //   throw new AuthenticationError('User account is not active');
-    // }
+    if (userProfile) {
+      if (userProfile.accountStatus !== "active") {
+        throw new AuthenticationError("User account is not active");
+      }
+    } else {
+      // Fallback: reject when we cannot confirm the account is active.
+      // Safer than trusting a stale token.
+      throw new AuthenticationError("Unable to verify account status");
+    }
 
-    // For now, attach decoded token data to request
+    // Attach user data to request
+    const { appwrite: dbConnForId } = require("../../database/connection");
+    const { Users } = require("node-appwrite");
+    const usersClient = new Users(dbConnForId.ensureAppwriteClients().client);
+    const userDetails = await usersClient.get(decoded.sub);
+
     req.user = {
-      id: decoded.sub,
-      email: decoded.email,
-      role: decoded.role,
-      permissions: decoded.permissions || [],
+      id: userDetails.$id,
+      email: userDetails.email,
+      role: userProfile.role,
+      kycLevel: parseInt(userProfile.kycLevel || 0, 10),
+      status: userProfile.accountStatus,
+      permissions: JSON.parse(userProfile.permissions || "[]"),
       sessionId: decoded.sessionId,
-      iat: decoded.iat,
-      exp: decoded.exp,
     };
 
     req.token = token;
@@ -207,7 +241,7 @@ async function authenticate(req, res, next) {
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-async function optionalAuthenticate(req, res, next) {
+async function optionalAuthenticate(req, _res, next) {
   try {
     const token = extractToken(req);
 

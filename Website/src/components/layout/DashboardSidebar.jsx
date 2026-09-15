@@ -225,7 +225,7 @@ const DashboardSidebar = ({ isOpen, onClose, className, user, ...props }) => {
             onClick={() => handleLinkClick("/dashboard")}
           >
             <img
-              src="/mainlogo.png"
+              src="/logo.png"
               alt="AfraPay"
               className="w-12 h-12 object-contain shrink-0"
             />

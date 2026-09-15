@@ -1,134 +1,79 @@
 /**
  * Token Blacklist Utility
- *
- * Tracks revoked JWT tokens until their natural expiry so that
- * logged-out (or force-revoked) tokens cannot be reused.
- *
- * Storage strategy:
- *   1. Redis (preferred) — distributed, survives restarts.
- *   2. In-memory Map (fallback) — single-process only; safe for dev.
- *
- * Key format: `blist:<jti>` when the token carries a `jti` claim,
- *             `blist:<last-40-chars-of-signature>` otherwise.
+ * Handles JWT token blacklisting for logout and security events
  */
 
+const { redis: { getClient } } = require("../database/connection");
 const logger = require("./logger");
 
-// ─── In-memory fallback ────────────────────────────────────────────────────
-// Map<key, expiryUnixSec>
-const memoryStore = new Map();
-
-// Purge expired entries every 5 minutes so memory doesn't grow unbounded.
-const _cleanup = setInterval(
-  () => {
-    const now = Math.floor(Date.now() / 1000);
-    for (const [key, expiry] of memoryStore) {
-      if (expiry <= now) memoryStore.delete(key);
-    }
-  },
-  5 * 60 * 1000,
-);
-_cleanup.unref(); // Don't prevent clean process exit.
-
-// ─── Redis helper ──────────────────────────────────────────────────────────
-function _getRedisClient() {
+/**
+ * Check if a token is blacklisted
+ * @param {Object} tokenPayload - Decoded JWT payload
+ * @param {string} tokenString - Original JWT token
+ * @returns {Promise<boolean>} True if blacklisted
+ */
+async function isBlacklisted(tokenPayload, tokenString) {
   try {
-    const { redis } = require("../database/connection");
-    const client = redis.getClient();
-    // ioredis exposes `.status`; only use a fully-ready connection.
-    if (client && client.status === "ready") return client;
-  } catch {
-    // Redis not initialised or not enabled — fall through to memory store.
-  }
-  return null;
-}
-
-// ─── Key derivation ────────────────────────────────────────────────────────
-/**
- * Produce a stable, short blacklist key for a given JWT.
- * Prefers the `jti` claim; falls back to the last 40 chars of the
- * signature segment (which is cryptographically unique per token).
- *
- * @param {Object} decoded  – Decoded JWT payload.
- * @param {string} rawToken – Raw JWT string (three dot-separated segments).
- * @returns {string}
- */
-function _key(decoded, rawToken) {
-  if (decoded && decoded.jti) return `blist:${decoded.jti}`;
-  const sig = rawToken.split(".").pop().slice(-40);
-  return `blist:${sig}`;
-}
-
-// ─── Public API ────────────────────────────────────────────────────────────
-/**
- * Add a token to the blacklist for the remainder of its natural lifetime.
- *
- * @param {Object} decoded  – Decoded JWT payload (must contain `.exp`).
- * @param {string} rawToken – Raw JWT string.
- */
-async function addToBlacklist(decoded, rawToken) {
-  const key = _key(decoded, rawToken);
-  const nowSec = Math.floor(Date.now() / 1000);
-  const ttlSec = Math.max(
-    ((decoded && decoded.exp) || nowSec + 900) - nowSec,
-    1,
-  );
-
-  const redisClient = _getRedisClient();
-  if (redisClient) {
-    try {
-      await redisClient.set(key, "1", "EX", ttlSec);
-      logger.debug("Token added to Redis blacklist", { key, ttlSec });
-      return;
-    } catch (err) {
-      logger.warn(
-        "Token blacklist Redis SET failed — falling back to memory store",
-        {
-          error: err.message,
-        },
-      );
+    const redis = getClient();
+    if (!redis) {
+      logger.warn("Redis not available for token blacklist check");
+      return false;
     }
-  }
 
-  // Memory fallback
-  memoryStore.set(key, nowSec + ttlSec);
-  logger.debug("Token added to in-memory blacklist", { key, ttlSec });
+    // Check by token jti (JWT ID) if available
+    const jti = tokenPayload.jti || tokenPayload.sessionId;
+    if (jti) {
+      const isBlacklisted = await redis.get(`bl:${jti}`);
+      return isBlacklisted !== null;
+    }
+
+    // Fallback: check by token string (less efficient, but works)
+    const isBlacklistedByToken = await redis.get(`bl:token:${tokenString}`);
+    return isBlacklistedByToken !== null;
+  } catch (error) {
+    logger.error("Error checking token blacklist:", error.message);
+    // Fail closed: if we can't check, treat as blacklisted for safety
+    return true;
+  }
 }
 
 /**
- * Check whether a token has been revoked.
- *
- * @param {Object} decoded  – Decoded JWT payload.
- * @param {string} rawToken – Raw JWT string.
- * @returns {Promise<boolean>} `true` if the token is blacklisted.
+ * Add a token to the blacklist
+ * @param {Object} tokenPayload - Decoded JWT payload
+ * @param {string} tokenString - Original JWT token
+ * @param {number} ttlSeconds - Time to live in seconds (defaults to token expiry)
  */
-async function isBlacklisted(decoded, rawToken) {
-  const key = _key(decoded, rawToken);
-
-  const redisClient = _getRedisClient();
-  if (redisClient) {
-    try {
-      const result = await redisClient.get(key);
-      return result !== null;
-    } catch (err) {
-      logger.warn(
-        "Token blacklist Redis GET failed — falling back to memory store",
-        {
-          error: err.message,
-        },
-      );
+async function blacklistToken(tokenPayload, tokenString, ttlSeconds) {
+  try {
+    const redis = getClient();
+    if (!redis) {
+      logger.warn("Redis not available for token blacklisting");
+      return false;
     }
-  }
 
-  // Memory fallback
-  const expiry = memoryStore.get(key);
-  if (expiry === undefined) return false;
-  const now = Math.floor(Date.now() / 1000);
-  if (expiry <= now) {
-    memoryStore.delete(key);
+    const jti = tokenPayload.jti || tokenPayload.sessionId;
+    const expiry = tokenPayload.exp * 1000 - Date.now(); // milliseconds until expiry
+    const ttl = Math.floor(expiry / 1000); // seconds until expiry
+
+    // Use the smaller of provided TTL or token's remaining TTL
+    const finalTTL = ttlSeconds ? Math.min(ttlSeconds, ttl) : ttl;
+
+    if (jti) {
+      await redis.set(`bl:${jti}`, "1", { EX: finalTTL });
+    }
+
+    // Also blacklist by token string for extra safety
+    await redis.set(`bl:token:${tokenString}`, "1", { EX: finalTTL });
+
+    logger.info("Token blacklisted", { jti, ttl: finalTTL });
+    return true;
+  } catch (error) {
+    logger.error("Error blacklisting token:", error.message);
     return false;
   }
-  return true;
 }
 
-module.exports = { addToBlacklist, isBlacklisted };
+module.exports = {
+  isBlacklisted,
+  blacklistToken,
+};

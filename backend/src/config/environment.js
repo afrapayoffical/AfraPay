@@ -77,7 +77,15 @@ const envSchema = Joi.object({
   APPWRITE_TRANSACTIONS_COLLECTION_ID: Joi.string().required(),
   APPWRITE_PAYMENTS_COLLECTION_ID: Joi.string().required(),
   APPWRITE_WALLETS_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_MERCHANT_WALLETS_COLLECTION_ID: Joi.string().required(),
   APPWRITE_DISPUTES_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_WALLET_ACCOUNTS_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_ACCOUNT_BALANCES_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_LEDGER_TRANSACTIONS_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_LEDGER_ENTRIES_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_IDEMPOTENCY_RECORDS_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_OUTBOX_EVENTS_COLLECTION_ID: Joi.string().required(),
+  APPWRITE_INTEGRITY_CHECKS_COLLECTION_ID: Joi.string().required(),
   APPWRITE_EDUCATION_CONTENT_COLLECTION_ID: Joi.string().allow(""),
   APPWRITE_EDUCATION_CATEGORIES_COLLECTION_ID: Joi.string().allow(""),
   APPWRITE_LEARNING_PATHS_COLLECTION_ID: Joi.string().allow(""),
@@ -204,6 +212,13 @@ const envSchema = Joi.object({
   ENABLE_REQUEST_LOGGING: Joi.boolean().default(true),
   SENTRY_DSN: Joi.string().allow(""),
 
+  // Argon2id for PIN hashing
+  ARGON2ID_MEMORY_COST: Joi.number().default(19456), // 19 MiB in KiB
+  ARGON2ID_TIME_COST: Joi.number().default(2),
+  ARGON2ID_PARALLELISM: Joi.number().default(1),
+  ARGON2ID_HASH_LENGTH: Joi.number().default(32),
+  ARGON2ID_SALT_LENGTH: Joi.number().default(16),
+
   // Security
   CORS_ORIGIN: Joi.alternatives()
     .try(Joi.string(), Joi.array().items(Joi.string()))
@@ -313,6 +328,20 @@ const config = {
       merchantWalletsCollectionId:
         env.APPWRITE_MERCHANT_WALLETS_COLLECTION_ID || "",
       payoutsCollectionId: env.APPWRITE_PAYOUTS_COLLECTION_ID || "",
+      walletAccountsCollectionId:
+        env.APPWRITE_WALLET_ACCOUNTS_COLLECTION_ID || "",
+      accountBalancesCollectionId:
+        env.APPWRITE_ACCOUNT_BALANCES_COLLECTION_ID || "",
+      ledgerTransactionsCollectionId:
+        env.APPWRITE_LEDGER_TRANSACTIONS_COLLECTION_ID || "",
+      ledgerEntriesCollectionId:
+        env.APPWRITE_LEDGER_ENTRIES_COLLECTION_ID || "",
+      idempotencyRecordsCollectionId:
+        env.APPWRITE_IDEMPOTENCY_RECORDS_COLLECTION_ID || "",
+      outboxEventsCollectionId:
+        env.APPWRITE_OUTBOX_EVENTS_COLLECTION_ID || "",
+      integrityChecksCollectionId:
+        env.APPWRITE_INTEGRITY_CHECKS_COLLECTION_ID || "",
     },
     redis: {
       host: env.REDIS_HOST,
@@ -337,6 +366,13 @@ const config = {
       windowMs: env.RATE_LIMIT_WINDOW,
       max: env.RATE_LIMIT_MAX_REQUESTS,
       enabled: env.ENABLE_RATE_LIMITING,
+    },
+    argon2id: {
+      memoryCost: env.ARGON2ID_MEMORY_COST,
+      timeCost: env.ARGON2ID_TIME_COST,
+      parallelism: env.ARGON2ID_PARALLELISM,
+      hashLength: env.ARGON2ID_HASH_LENGTH,
+      saltLength: env.ARGON2ID_SALT_LENGTH,
     },
     cors: {
       allowedOrigins,
@@ -495,6 +531,13 @@ const config = {
     bookmarksId: env.APPWRITE_BOOKMARKS_COLLECTION_ID || "",
     auditLogsId: env.APPWRITE_AUDIT_LOGS_COLLECTION || "",
     fraudFlagsId: env.APPWRITE_FRAUD_FLAGS_COLLECTION_ID || "",
+    walletAccountsId: env.APPWRITE_WALLET_ACCOUNTS_COLLECTION_ID || "",
+    accountBalancesId: env.APPWRITE_ACCOUNT_BALANCES_COLLECTION_ID || "",
+    ledgerTransactionsId: env.APPWRITE_LEDGER_TRANSACTIONS_COLLECTION_ID || "",
+    ledgerEntriesId: env.APPWRITE_LEDGER_ENTRIES_COLLECTION_ID || "",
+    idempotencyRecordsId: env.APPWRITE_IDEMPOTENCY_RECORDS_COLLECTION_ID || "",
+    outboxEventsId: env.APPWRITE_OUTBOX_EVENTS_COLLECTION_ID || "",
+    integrityChecksId: env.APPWRITE_INTEGRITY_CHECKS_COLLECTION_ID || "",
   },
 
   // Webhook shared secrets — used for HMAC signature verification.

@@ -7,6 +7,7 @@ const { Client, Databases, Users, Account } = require("node-appwrite");
 const Redis = require("ioredis");
 const config = require("../config/environment");
 const logger = require("../utils/logger");
+const pg = require("./pgConnection");
 
 class DatabaseManager {
   constructor() {
@@ -260,4 +261,6 @@ module.exports = {
     getClient: () => databaseManager.getRedis(),
   },
   databaseManager,
+  // PostgreSQL pool — lazy-initialised on first use
+  pg,
 };

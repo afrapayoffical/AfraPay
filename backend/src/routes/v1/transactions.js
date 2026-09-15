@@ -94,7 +94,7 @@ router.post(
 
 /**
  * @route  POST /api/v1/transactions/transfer
- * @desc   Peer-to-peer wallet transfer with double-entry bookkeeping
+ * @desc   Peer-to-peer wallet transfer
  * @access Private – KYC level ≥ 1, MFA verified
  */
 router.post(

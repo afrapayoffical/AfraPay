@@ -33,14 +33,16 @@ const PublicLayout = () => {
             {/* Logo */}
             <div className="flex items-center space-x-2">
               <Link to="/" aria-label="AfraPay – go to homepage">
-                <img
-                  src="/mainlogo.png"
-                  alt="AfraPay logo"
-                  className="w-14 h-14 object-contain"
-                  width={56}
-                  height={56}
-                  loading="eager"
-                />
+                <span className="flex w-14 h-14 items-center justify-center rounded-xl bg-white p-1 shadow-md ring-1 ring-white/70">
+                  <img
+                    src="/logo.png"
+                    alt="AfraPay logo"
+                    className="w-full h-full object-contain"
+                    width={56}
+                    height={56}
+                    loading="eager"
+                  />
+                </span>
               </Link>
               <Link
                 to="/"
@@ -215,14 +217,16 @@ const PublicLayout = () => {
               {/* Company info */}
               <div className="col-span-1 md:col-span-2">
                 <div className="flex items-center space-x-2 mb-4">
-                  <img
-                    src="/mainlogo.png"
-                    alt="AfraPay logo"
-                    className="w-14 h-14 object-contain"
-                    width={56}
-                    height={56}
-                    loading="lazy"
-                  />
+                  <span className="flex w-14 h-14 items-center justify-center rounded-xl bg-white p-1 shadow-md ring-1 ring-white/70">
+                    <img
+                      src="/logo.png"
+                      alt="AfraPay logo"
+                      className="w-full h-full object-contain"
+                      width={56}
+                      height={56}
+                      loading="lazy"
+                    />
+                  </span>
                   <span className="font-bold text-xl">AfraPay</span>
                 </div>
                 <address className="not-italic">

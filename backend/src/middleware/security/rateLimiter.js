@@ -232,6 +232,24 @@ const webhookLimiter = createRateLimiter({
   }
 });
 
+// PIN rate limiter (strict: 5 attempts per 15 minutes)
+const pinLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  skipSuccessfulRequests: true,
+  message: {
+    success: false,
+    error: {
+      code: 'PIN_RATE_LIMIT_EXCEEDED',
+      message: 'Too many failed PIN attempts. Account temporarily locked for 15 minutes.'
+    }
+  },
+  keyGenerator: (req) => {
+    const userId = req.user?.id || req.ip;
+    return `pin:${userId}`;
+  }
+});
+
 module.exports = {
   createRateLimiter,
   globalLimiter,
@@ -240,5 +258,6 @@ module.exports = {
   adminLimiter,
   uploadLimiter,
   webhookLimiter,
+  pinLimiter,
   RedisStore
 };

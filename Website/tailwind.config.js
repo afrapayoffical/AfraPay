@@ -1,3 +1,31 @@
+const marbleBlue = {
+  50: "#eef7fd",
+  100: "#d9effb",
+  200: "#b9def4",
+  300: "#8cc5e9",
+  400: "#4da5d5",
+  500: "#0B5EA8",
+  600: "#09528f",
+  700: "#084477",
+  800: "#07365f",
+  900: "#052a4a",
+  950: "#031c31",
+};
+
+const oxigon = {
+  50: "#e6fff8",
+  100: "#c8fff0",
+  200: "#91ffe0",
+  300: "#55f5ce",
+  400: "#1de2b3",
+  500: "#00C896",
+  600: "#00a97f",
+  700: "#008966",
+  800: "#006b50",
+  900: "#004d3a",
+  950: "#003326",
+};
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: "class",
@@ -11,43 +39,19 @@ module.exports = {
         "border-foreground": "hsl(var(--border-foreground))",
         // AfraPay Brand Colors
         primary: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6", // Main brand blue - vivid
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
-          950: "#172554",
+          ...marbleBlue,
         },
         secondary: {
-          50: "#f0fdf4",
-          100: "#dcfce7",
-          200: "#bbf7d0",
-          300: "#86efac",
-          400: "#4ade80",
-          500: "#22c55e", // Brand green - vibrant
-          600: "#16a34a",
-          700: "#15803d",
-          800: "#166534",
-          900: "#14532d",
-          950: "#052e16",
+          ...oxigon,
         },
+        blue: marbleBlue,
+        indigo: marbleBlue,
+        green: oxigon,
+        emerald: oxigon,
+        teal: oxigon,
+        cyan: oxigon,
         success: {
-          50: "#f0fdf4",
-          100: "#dcfce7",
-          200: "#bbf7d0",
-          300: "#86efac",
-          400: "#4ade80",
-          500: "#22c55e",
-          600: "#16a34a",
-          700: "#15803d",
-          800: "#166534",
-          900: "#14532d",
-          950: "#052e16",
+          ...oxigon,
         },
         warning: {
           50: "#fffbeb",

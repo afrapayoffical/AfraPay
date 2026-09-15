@@ -14,6 +14,33 @@ try {
     exit 1
 }
 
+# Check if PostgreSQL is running
+Write-Host "📋 Checking PostgreSQL..." -ForegroundColor Yellow
+try {
+    $pgTest = Test-NetConnection -ComputerName localhost -Port 5432 -WarningAction SilentlyContinue
+    if ($pgTest.TcpTestSucceeded) {
+        Write-Host "✅ PostgreSQL is running on localhost:5432" -ForegroundColor Green
+    } else {
+        throw "PostgreSQL is not reachable"
+    }
+} catch {
+    Write-Host "⚠️  PostgreSQL is not running. Starting PostgreSQL container..." -ForegroundColor Yellow
+    try {
+        docker run --name afrapay-postgres -e POSTGRES_USER=bxlaalph_afrapay_app -e POSTGRES_PASSWORD=94KSBFn:7(att0 -e POSTGRES_DB=bxlaalph_afrapay -p 5432:5432 -d postgres:16
+        Start-Sleep -Seconds 3
+        $pgTest = Test-NetConnection -ComputerName localhost -Port 5432 -WarningAction SilentlyContinue
+        if ($pgTest.TcpTestSucceeded) {
+            Write-Host "✅ PostgreSQL container started successfully" -ForegroundColor Green
+        } else {
+            Write-Host "❌ PostgreSQL container could not be started. Check Docker and port 5432." -ForegroundColor Red
+            exit 1
+        }
+    } catch {
+        Write-Host "❌ Failed to start PostgreSQL with Docker. Ensure Docker is running and PostgreSQL is reachable." -ForegroundColor Red
+        exit 1
+    }
+}
+
 # Check if Appwrite is running
 Write-Host "📋 Checking Appwrite..." -ForegroundColor Yellow
 try {

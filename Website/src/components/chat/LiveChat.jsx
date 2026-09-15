@@ -194,7 +194,7 @@ const LiveChat = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center">
               <img
-                src="/mainlogo.png"
+                src="/logo.png"
                 alt="AfraPay Logo"
                 className="w-10 h-10 object-contain"
               />
@@ -237,7 +237,7 @@ const LiveChat = ({ isOpen, onClose }) => {
             <div className="text-center py-8">
               <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <img
-                  src="/mainlogo.png"
+                  src="/logo.png"
                   alt="AfraPay Logo"
                   className="w-10 h-10 object-contain"
                 />

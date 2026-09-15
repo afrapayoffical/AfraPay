@@ -6,19 +6,19 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "mainlogo.png",
+      "src": "logo.png",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "mainlogo.png",
+      "src": "logo.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "maskable any"
     },
     {
-      "src": "mainlogo.png",
+      "src": "logo.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable any"
@@ -27,7 +27,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "theme_color": "#0066cc",
+  "theme_color": "#0B5EA8",
   "background_color": "#ffffff",
   "orientation": "portrait",
   "categories": ["finance", "productivity"],
